@@ -95,3 +95,10 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// Get the amount of free memory available
+uint64
+sys_kspare(void)
+{
+  return kspare();
+}

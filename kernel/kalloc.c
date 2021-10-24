@@ -80,3 +80,22 @@ kalloc(void)
     memset((char*)r, 5, PGSIZE); // fill with junk
   return (void*)r;
 }
+
+// Get the amount of free memory available
+uint64
+kspare(void)
+{
+  struct run *r;
+
+  acquire(&kmem.lock);
+  r = kmem.freelist;
+  uint64 spare;
+  // compute the amount of free memory available
+  if (r)
+    spare = (uint64)r - (uint64)end + PGSIZE;
+  else
+    spare = 0;
+  release(&kmem.lock);
+
+  return spare;
+}
