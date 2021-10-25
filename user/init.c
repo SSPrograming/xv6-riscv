@@ -25,7 +25,7 @@ main(void)
 
   for(;;){
     printf("init: starting sh\n");
-    printf("available memory: %l\n", kspare());
+    printf("available memory: %lB\n", kspare());
     pid = fork();
     if(pid < 0){
       printf("init: fork failed\n");
