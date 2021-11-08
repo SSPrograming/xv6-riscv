@@ -207,7 +207,7 @@ proc_pagetable(struct proc *p)
     return 0;
   }
 
-  // map the usyscall just below TRAPFRAM
+  // map the usyscall just below TRAPFRAM.
   if(mappages(pagetable, USYSCALL, PGSIZE,
               (uint64)(p->usyscall), PTE_R | PTE_U) < 0) {
     uvmunmap(pagetable, TRAMPOLINE, 2, 0);
