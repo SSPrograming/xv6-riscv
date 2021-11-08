@@ -77,11 +77,25 @@ sys_sleep(void)
 
 
 #ifdef LAB_PGTBL
-int
+uint64
 sys_pgaccess(void)
 {
   // lab pgtbl: your code here.
-  return 0;
+  // Three argments:
+  // First: the starting virtual address of the first user page to check.
+  // Second: the number of pages to check.
+  // Third: a user address to a buffer to store the results into a bitmask.
+  uint64 uaddr;
+  int npages;
+  uint64 ubuffer;
+  if(argaddr(0, &uaddr) < 0)
+    return -1;
+  if(argint(1, &npages) < 0)
+    return -1;
+  if(argaddr(2, &ubuffer))
+    return -1;
+  
+  return pgaccess(uaddr, npages, ubuffer);
 }
 #endif
 

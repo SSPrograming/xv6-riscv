@@ -433,6 +433,7 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
   }
 }
 
+#ifdef LAB_PGTBL
 // Recursively print page table.
 void
 vmprint(pagetable_t pagetable, int depth)
@@ -458,3 +459,4 @@ vmprint(pagetable_t pagetable, int depth)
     }
   }
 }
+#endif

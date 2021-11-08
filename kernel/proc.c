@@ -674,3 +674,32 @@ procdump(void)
     printf("\n");
   }
 }
+
+#ifdef LAB_PGTBL
+int pgaccess(uint64 uaddr, int npages, uint64 ubuffer) {
+  // Set an upper limit on the number of pages that can be scanned.
+  if (npages > 64) {
+    return -1;
+  }
+  uint64 bitmap;
+  struct proc *p = myproc();
+  pte_t *pte;
+  uint64 va;
+
+  bitmap = 0;
+  for (int i = 0; i < npages; i++) {
+    va = uaddr + PGSIZE * i;
+    pte = walk(p->pagetable, va, 0);
+    if (*pte & PTE_A) {
+      bitmap |= (1 << i);
+      *pte &= ~PTE_A; // clear accessed bit
+    }
+  }
+
+  if (copyout(p->pagetable, ubuffer, (char*)(&bitmap), sizeof(bitmap)) < 0) {
+    return -1;
+  }
+
+  return 0;
+}
+#endif
