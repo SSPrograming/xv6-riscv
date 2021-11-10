@@ -102,3 +102,11 @@ sys_kspare(void)
 {
   return kspare();
 }
+
+// Print page table
+uint64
+sys_vmprint(void) 
+{
+  vmprint(myproc()->pagetable, 0);
+  return 0;
+}
