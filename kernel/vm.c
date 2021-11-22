@@ -364,9 +364,11 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
     if (pa0 == 0)
     {
       struct proc *p = myproc();
-      if ((dstva >= p->sz)                                               // Higher then allocated
-          || (dstva >= (p->sz - 2 * PGSIZE) && dstva < (p->sz - PGSIZE)) // Guard page under user stack
-          )
+      if ((dstva >= p->sz)) // Higher then allocated
+      {
+        return -1;
+      }
+      if (walk(pagetable, va0, 0) != 0 && (*walk(pagetable, va0, 0) & PTE_V) != 0 && (*walk(pagetable, va0, 0) & PTE_U) == 0) // Guard Page
       {
         return -1;
       }
@@ -408,9 +410,11 @@ copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)
     if (pa0 == 0)
     {
       struct proc *p = myproc();
-      if ((srcva >= p->sz)                                           // Higher then allocated
-          || (srcva >= (p->sz - 2 * PGSIZE) && srcva < (p->sz - PGSIZE)) // Guard page under user stack
-      )
+      if ((srcva >= p->sz)) // Higher then allocated
+      {
+        return -1;
+      }
+      if (walk(pagetable, va0, 0) != 0 && (*walk(pagetable, va0, 0) & PTE_V) != 0 && (*walk(pagetable, va0, 0) & PTE_U) == 0) // Guard Page
       {
         return -1;
       }
@@ -454,9 +458,11 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
     if (pa0 == 0)
     {
       struct proc *p = myproc();
-      if ((srcva >= p->sz)                                           // Higher then allocated
-          || (srcva >= (p->sz - 2 * PGSIZE) && srcva < (p->sz - PGSIZE)) // Guard page under user stack
-      )
+      if ((srcva >= p->sz)) // Higher then allocated
+      {
+        return -1;
+      }
+      if (walk(pagetable, va0, 0) != 0 && (*walk(pagetable, va0, 0) & PTE_V) != 0 && (*walk(pagetable, va0, 0) & PTE_U) == 0) // Guard Page
       {
         return -1;
       }

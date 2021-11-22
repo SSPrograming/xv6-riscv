@@ -70,9 +70,11 @@ usertrap(void)
   {
     // page fault -> lazy location
     uint64 a = r_stval();
-    if ((a >= p->sz)                                       // Higher then allocated
-        || (a >= p->sz - 2 * PGSIZE && a < p->sz - PGSIZE) // Guard page under user stack
-    )
+    if ((a >= p->sz)) // Higher then allocated
+    {
+      p->killed = 1;
+    }
+    else if (walk(p->pagetable, a, 0) != 0 && (*walk(p->pagetable, a, 0) & PTE_V) != 0 && (*walk(p->pagetable, a, 0) & PTE_U) == 0) // Guard Page
     {
       p->killed = 1;
     }
