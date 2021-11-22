@@ -283,7 +283,7 @@ freewalk(pagetable_t pagetable)
     } else if(pte & PTE_V) {
       // in fact, this should not be ignored
       // when program size out of memory, panic is good
-      // panic("freewalk: leaf");
+      // panic("freewalk: leaf"); 
     }
   }
   kfree((void*)pagetable);
