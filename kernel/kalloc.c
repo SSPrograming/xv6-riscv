@@ -42,6 +42,9 @@ freerange(void *pa_start, void *pa_end)
 {
   char *p;
   p = (char*)PGROUNDUP((uint64)pa_start);
+  acquire(&kmap.lock);
+  memset(kmap.page_ref, 0, sizeof(kmap.page_ref));
+  release(&kmap.lock);
   for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE)
     kfree(p);
 }
