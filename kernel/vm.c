@@ -5,6 +5,8 @@
 #include "riscv.h"
 #include "defs.h"
 #include "fs.h"
+#include "spinlock.h"
+#include "proc.h"
 
 /*
  * the kernel's page table.
@@ -211,7 +213,7 @@ uint64 uvmremap(pagetable_t pagetable, uint64 va)
   // 如果指向该页的数量大于1，则分配新页
   if (kref((void *)pa) > 1)
   {
-    if ((mem = kalloc()) == 0)
+    if ((mem = kalloc()) == 0) 
       goto err;
     memmove(mem, (void *)pa, PGSIZE);
     kdecrease((void *)pa);

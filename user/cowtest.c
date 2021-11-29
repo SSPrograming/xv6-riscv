@@ -180,16 +180,18 @@ filetest()
 int
 main(int argc, char *argv[])
 {
-  simpletest();
+  printf("%d\n", kspare());
+  //simpletest();
 
   // check that the first simpletest() freed the physical memory.
   //simpletest();
 
-  //threetest();
+  threetest();
   //threetest();
   //threetest();
 
   //filetest();
+  printf("%d\n", kspare());
 
   printf("ALL COW TESTS PASSED\n");
 
