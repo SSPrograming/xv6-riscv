@@ -89,13 +89,15 @@ kspare(void)
 
   acquire(&kmem.lock);
   r = kmem.freelist;
-  uint64 spare;
+  uint64 spare_count;
   // compute the amount of free memory available
-  if (r)
-    spare = (uint64)r - (uint64)end + PGSIZE;
-  else
-    spare = 0;
+  spare_count = 0;
+  while (r)
+  {
+    spare_count++;
+    r = r->next;
+  }
   release(&kmem.lock);
 
-  return spare;
+  return spare_count * PGSIZE;
 }
