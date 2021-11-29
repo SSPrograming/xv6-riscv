@@ -2,7 +2,9 @@
 #include "types.h"
 #include "memlayout.h"
 #include "elf.h"
+#include "spinlock.h"
 #include "riscv.h"
+#include "proc.h"
 #include "defs.h"
 #include "fs.h"
 
@@ -14,6 +16,16 @@ pagetable_t kernel_pagetable;
 extern char etext[];  // kernel.ld sets this to end of kernel code.
 
 extern char trampoline[]; // trampoline.S
+
+/*
+ * COW Map Counts
+ */
+#define PA2MAP(PA) ((PA - KERNBASE) >> PGSHIFT)
+struct
+{
+  struct spinlock lock;
+  int mem_map[PA2MAP(PHYSTOP)];
+} umem;
 
 // Make a direct-map page table for the kernel.
 pagetable_t
@@ -53,6 +65,7 @@ kvmmake(void)
 void
 kvminit(void)
 {
+  initlock(&umem.lock, "umem"); // initlock
   kernel_pagetable = kvmmake();
 }
 
@@ -150,6 +163,15 @@ mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
       return -1;
     if(*pte & PTE_V)
       panic("mappages: remap");
+    if (perm & PTE_COW) {
+      acquire(&umem.lock);
+      if (umem.mem_map[PA2MAP(pa)] == 0) {
+        umem.mem_map[PA2MAP(pa)] += 2;
+      } else {
+        umem.mem_map[PA2MAP(pa)] += 1;
+      }
+      release(&umem.lock);
+    }
     *pte = PA2PTE(pa) | perm | PTE_V;
     if(a == last)
       break;
@@ -180,10 +202,70 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
       panic("uvmunmap: not a leaf");
     if(do_free){
       uint64 pa = PTE2PA(*pte);
-      kfree((void*)pa);
+      if (*pte & PTE_COW) {
+        acquire(&umem.lock);
+        // 只有所有指向该页的页表项都被销毁了才实际上释放该页
+        if (--umem.mem_map[PA2MAP(pa)] == 0) {
+          kfree((void*)pa);
+        }
+        release(&umem.lock);
+      }
+      else {
+        kfree((void*)pa);
+      }
     }
     *pte = 0;
   }
+}
+
+// 处理COW时的页分配
+uint64 uvmremap(pagetable_t pagetable, uint64 va)
+{
+  pte_t *pte;
+
+  if ((va % PGSIZE) != 0)
+    panic("uvmremap: not aligned");
+
+  if (va >= MAXVA)
+    return -1;
+
+  if ((pte = walk(pagetable, va, 0)) == 0)
+    panic("uvmremap: walk");
+  if ((*pte & PTE_V) == 0)
+    panic("uvmremap: not mapped");
+  if ((*pte & PTE_COW) == 0)
+    panic("uvmremap: not copy-on-write");
+  if (PTE_FLAGS(*pte) == PTE_V)
+    panic("uvmremap: not a leaf");
+  if ((*pte & PTE_U) == 0)
+    return -1;
+
+  uint64 pa = PTE2PA(*pte);
+  acquire(&umem.lock);
+  char *mem;
+  // 如果指向该页的数量大于1，则分配新页
+  if (umem.mem_map[PA2MAP(pa)] > 1) {
+    if ((mem = kalloc()) == 0)
+      goto err;
+    memmove(mem, (void *)pa, PGSIZE);
+  }
+  // 如果指向该页的数量等于1，则直接使用该页
+  else if (umem.mem_map[PA2MAP(pa)] == 1) {
+    mem = (char *)pa;
+  }
+  else
+    goto err;
+  uint64 perm = PTE_FLAGS(*pte);
+  perm &= ~PTE_COW; // Clear PTE_COW
+  perm |= PTE_W; // Set PTE_W
+  *pte = PA2PTE(mem) | perm;
+  umem.mem_map[PA2MAP(pa)]--;
+  release(&umem.lock);
+  return 0;
+
+err:
+  release(&umem.lock);
+  return -1;
 }
 
 // create an empty user page table.
@@ -304,19 +386,23 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
   uint64 pa, i;
   uint flags;
   char *mem;
-
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walk(old, i, 0)) == 0)
       panic("uvmcopy: pte should exist");
     if((*pte & PTE_V) == 0)
       panic("uvmcopy: page not present");
     pa = PTE2PA(*pte);
+    *pte &= ~PTE_W; // Clear PTE_W bit
+    *pte |= PTE_COW; // Set PTE_COW bit
     flags = PTE_FLAGS(*pte);
+    mem = (char *)pa; // Child mem is the same as parent pa
+    /*
     if((mem = kalloc()) == 0)
       goto err;
     memmove(mem, (char*)pa, PGSIZE);
+    */
     if(mappages(new, i, PGSIZE, (uint64)mem, flags) != 0){
-      kfree(mem);
+      // kfree(mem);
       goto err;
     }
   }
@@ -350,6 +436,17 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 
   while(len > 0){
     va0 = PGROUNDDOWN(dstva);
+    if (dstva >= myproc()->sz) 
+      return -1;
+    pte_t* pte = walk(pagetable, va0, 0);
+    if (pte == 0) 
+      return -1;
+    if ((*pte & PTE_V) == 0) 
+      return -1;
+    if ((*pte & PTE_U) == 0)
+      return -1;
+    if ((*pte & PTE_COW) && (uvmremap(pagetable, va0) != 0)) 
+      return -1;
     pa0 = walkaddr(pagetable, va0);
     if(pa0 == 0)
       return -1;
