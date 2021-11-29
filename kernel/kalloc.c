@@ -23,10 +23,17 @@ struct {
   struct run *freelist;
 } kmem;
 
+#define PA2MAP(PA)((PA - KERNBASE) >> PGSHIFT)
+struct {
+  struct spinlock lock;
+  uint32 page_ref[PA2MAP(PHYSTOP)];
+} kmap;
+
 void
 kinit()
 {
   initlock(&kmem.lock, "kmem");
+  initlock(&kmap.lock, "kmap");
   freerange(end, (void*)PHYSTOP);
 }
 
@@ -50,6 +57,18 @@ kfree(void *pa)
 
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
+
+  acquire(&kmap.lock);
+  // Only when ref count == 0, free pa
+  if (kmap.page_ref[PA2MAP((uint64)pa)] == 0)
+  {
+  }
+  else if (--kmap.page_ref[PA2MAP((uint64)pa)] > 0)
+  {
+    release(&kmap.lock);
+    return;
+  }
+  release(&kmap.lock);
 
   // Fill with junk to catch dangling refs.
   memset(pa, 1, PGSIZE);
@@ -76,7 +95,19 @@ kalloc(void)
     kmem.freelist = r->next;
   release(&kmem.lock);
 
-  if(r)
+  if(r) {
     memset((char*)r, 5, PGSIZE); // fill with junk
+    acquire(&kmap.lock);
+    kmap.page_ref[PA2MAP((uint64)r)] = 1; // Set reference count = 1
+    release(&kmap.lock);
+  }
   return (void*)r;
+}
+
+// Increase ref count
+void 
+kref(void *pa) {
+  acquire(&kmap.lock);
+  kmap.page_ref[PA2MAP((uint64)pa)]++; // increase reference count
+  release(&kmap.lock);
 }
