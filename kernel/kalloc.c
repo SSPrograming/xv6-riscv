@@ -106,8 +106,22 @@ kalloc(void)
 
 // Increase ref count
 void 
-kref(void *pa) {
+kincrease(void *pa) {
   acquire(&kmap.lock);
   kmap.page_ref[PA2MAP((uint64)pa)]++; // increase reference count
   release(&kmap.lock);
+}
+
+// Decrease ref count
+void 
+kdecrease(void *pa) {
+  acquire(&kmap.lock);
+  kmap.page_ref[PA2MAP((uint64)pa)]--; // increase reference count
+  release(&kmap.lock);
+}
+
+// Get ref count
+uint64 
+kref(void* pa) {
+  return kmap.page_ref[PA2MAP((uint64)pa)];
 }
