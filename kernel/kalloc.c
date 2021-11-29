@@ -119,7 +119,7 @@ kincrease(void *pa) {
 void 
 kdecrease(void *pa) {
   acquire(&kmap.lock);
-  kmap.page_ref[PA2MAP((uint64)pa)]--; // increase reference count
+  kmap.page_ref[PA2MAP((uint64)pa)]--; // decrease reference count
   release(&kmap.lock);
 }
 
