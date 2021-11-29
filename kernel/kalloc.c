@@ -128,3 +128,24 @@ uint64
 kref(void* pa) {
   return kmap.page_ref[PA2MAP((uint64)pa)];
 }
+
+// Get the amount of free memory available
+uint64
+kspare(void)
+{
+  struct run *r;
+
+  acquire(&kmem.lock);
+  r = kmem.freelist;
+  uint64 spare_count;
+  // compute the amount of free memory available
+  spare_count = 0;
+  while (r)
+  {
+    spare_count++;
+    r = r->next;
+  }
+  release(&kmem.lock);
+
+  return spare_count * PGSIZE;
+}

@@ -95,3 +95,18 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// Get the amount of free memory available
+uint64
+sys_kspare(void)
+{
+  return kspare();
+}
+
+// Print page table
+uint64
+sys_vmprint(void) 
+{
+  vmprint(myproc()->pagetable, 0);
+  return 0;
+}
