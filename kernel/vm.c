@@ -21,8 +21,7 @@ extern char trampoline[]; // trampoline.S
  * COW Map Counts
  */
 #define PA2MAP(PA) ((PA - KERNBASE) >> PGSHIFT)
-struct
-{
+struct {
   struct spinlock lock;
   int mem_map[PA2MAP(PHYSTOP)];
 } umem;
@@ -165,11 +164,10 @@ mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
       panic("mappages: remap");
     if (perm & PTE_COW) {
       acquire(&umem.lock);
-      if (umem.mem_map[PA2MAP(pa)] == 0) {
+      if (umem.mem_map[PA2MAP(pa)] == 0)
         umem.mem_map[PA2MAP(pa)] += 2;
-      } else {
+      else
         umem.mem_map[PA2MAP(pa)] += 1;
-      }
       release(&umem.lock);
     }
     *pte = PA2PTE(pa) | perm | PTE_V;
@@ -206,12 +204,12 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
         acquire(&umem.lock);
         // 只有所有指向该页的页表项都被销毁了才实际上释放该页
         if (--umem.mem_map[PA2MAP(pa)] == 0) {
-          kfree((void*)pa);
+          kfree((void *)pa);
         }
         release(&umem.lock);
       }
       else {
-        kfree((void*)pa);
+        kfree((void *)pa);
       }
     }
     *pte = 0;
@@ -436,16 +434,21 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 
   while(len > 0){
     va0 = PGROUNDDOWN(dstva);
-    if (dstva >= myproc()->sz) 
+    /* This is turely important
+    if (dstva >= myproc()->sz)
       return -1;
-    pte_t* pte = walk(pagetable, va0, 0);
-    if (pte == 0) 
+    */
+   if (dstva > MAXVA) {
+    return -1;
+   }
+    pte_t *pte = walk(pagetable, va0, 0);
+    if (pte == 0)
       return -1;
-    if ((*pte & PTE_V) == 0) 
+    if ((*pte & PTE_V) == 0)
       return -1;
     if ((*pte & PTE_U) == 0)
       return -1;
-    if ((*pte & PTE_COW) && (uvmremap(pagetable, va0) != 0)) 
+    if ((*pte & PTE_COW) && (uvmremap(pagetable, va0) != 0))
       return -1;
     pa0 = walkaddr(pagetable, va0);
     if(pa0 == 0)
