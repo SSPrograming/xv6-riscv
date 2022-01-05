@@ -25,6 +25,7 @@ int sleep(int);
 int uptime(void);
 uint64 kspare(void);
 int vmprint(void);
+int pgaccess(void *base, int len, void *mask);
 
 // ulib.c
 int stat(const char*, struct stat*);
@@ -42,3 +43,5 @@ void free(void*);
 int atoi(const char*);
 int memcmp(const void *, const void *, uint);
 void *memcpy(void *, const void *, uint);
+int ugetpid(void);
+uint64 ugetsz(void);

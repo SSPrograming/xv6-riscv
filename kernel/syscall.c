@@ -106,6 +106,7 @@ extern uint64 sys_write(void);
 extern uint64 sys_uptime(void);
 extern uint64 sys_kspare(void);
 extern uint64 sys_vmprint(void);
+extern uint64 sys_pgaccess(void);
 
 static uint64 (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -131,6 +132,7 @@ static uint64 (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 [SYS_kspare]  sys_kspare,
 [SYS_vmprint] sys_vmprint,
+[SYS_pgaccess] sys_pgaccess,
 };
 
 void

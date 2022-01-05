@@ -103,3 +103,10 @@ sys_vmprint(void)
   vmprint(myproc()->pagetable, 0);
   return 0;
 }
+
+int
+sys_pgaccess(void)
+{
+  
+  return 0;
+}
