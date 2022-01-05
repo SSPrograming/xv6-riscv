@@ -4,5 +4,6 @@
 int main() {
     uint64 available = kspare();
     printf("available memory: %lB\n", available);
+    vmprint();
     exit(0);
 }
