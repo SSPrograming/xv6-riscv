@@ -2109,7 +2109,7 @@ sbrkbasic(char *s)
     // a pagefault should have killed this process.
     exit(1);
   }
-
+  printf("\0");
   wait(&xstatus);
   if(xstatus == 1){
     printf("%s: too much memory allocated!\n", s);
@@ -2316,6 +2316,7 @@ sbrkfail(char *s)
     printf("%s: allocate a lot of memory succeeded %d\n", s, n);
     exit(1);
   }
+  printf("\0");
   wait(&xstatus);
   if(xstatus != -1 && xstatus != 2)
     exit(1);

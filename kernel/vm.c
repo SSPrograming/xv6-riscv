@@ -248,8 +248,10 @@ uint64 uvmremap(pagetable_t pagetable, uint64 va)
   char *mem;
   // 如果指向该页的数量大于1，则分配新页
   if (umem.mem_map[PA2MAP(pa)] > 1) {
-    if ((mem = kalloc()) == 0)
+    if ((mem = kalloc()) == 0) {
+      umem.mem_map[PA2MAP(pa)]--;
       goto err;
+    }
     memmove(mem, (void *)pa, PGSIZE);
   }
   // 如果指向该页的数量等于1，则直接使用该页
@@ -460,7 +462,7 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
         return -1;
       }
     }
-    pa0 = PTE2PA(*pte);
+    pa0 = walkaddr(pagetable, va0);
     // lazy
     if (pa0 == 0)
     {
