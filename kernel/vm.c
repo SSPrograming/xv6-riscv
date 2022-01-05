@@ -17,6 +17,16 @@ extern char etext[];  // kernel.ld sets this to end of kernel code.
 
 extern char trampoline[]; // trampoline.S
 
+/*
+ * COW Map Counts
+ */
+#define PA2MAP(PA) ((PA - KERNBASE) >> PGSHIFT)
+struct
+{
+  struct spinlock lock;
+  int mem_map[PA2MAP(PHYSTOP)];
+} umem;
+
 // Make a direct-map page table for the kernel.
 pagetable_t
 kvmmake(void)
@@ -55,6 +65,7 @@ kvmmake(void)
 void
 kvminit(void)
 {
+  initlock(&umem.lock, "umem");
   kernel_pagetable = kvmmake();
 }
 
@@ -152,6 +163,15 @@ mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
       return -1;
     if(*pte & PTE_V)
       panic("mappages: remap");
+    if(perm & PTE_COW) {
+      acquire(&umem.lock);
+      if (umem.mem_map[PA2MAP(pa)] == 0) {
+        umem.mem_map[PA2MAP(pa)] += 2;
+      } else {
+        umem.mem_map[PA2MAP(pa)] += 1;
+      }
+      release(&umem.lock);
+    }
     *pte = PA2PTE(pa) | perm | PTE_V;
     if(a == last)
       break;
@@ -184,10 +204,71 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
       panic("uvmunmap: not a leaf");
     if(do_free){
       uint64 pa = PTE2PA(*pte);
-      kfree((void*)pa);
+      if (*pte & PTE_COW) {
+        acquire(&umem.lock);
+        // only if count = 0 we free it.
+        if (--umem.mem_map[PA2MAP(pa)] == 0) 
+        {
+          kfree((void*)pa);
+        }
+        release(&umem.lock);
+      }
+      else {
+        kfree((void*)pa);
+      }
     }
     *pte = 0;
   }
+}
+
+// 处理COW时的页分配
+uint64 uvmremap(pagetable_t pagetable, uint64 va)
+{
+  pte_t *pte;
+
+  if ((va % PGSIZE) != 0)
+    panic("uvmremap: not aligned");
+
+  if (va >= MAXVA)
+    return -1;
+
+  if ((pte = walk(pagetable, va, 0)) == 0)
+    panic("uvmremap: walk");
+  if ((*pte & PTE_V) == 0)
+    panic("uvmremap: not mapped");
+  if ((*pte & PTE_COW) == 0)
+    panic("uvmremap: not copy-on-write");
+  if (PTE_FLAGS(*pte) == PTE_V)
+    panic("uvmremap: not a leaf");
+  if ((*pte & PTE_U) == 0)
+    return -1;
+
+  uint64 pa = PTE2PA(*pte);
+  acquire(&umem.lock);
+  char *mem;
+  // 如果指向该页的数量大于1，则分配新页
+  if (umem.mem_map[PA2MAP(pa)] > 1) {
+    if ((mem = kalloc()) == 0)
+      goto err;
+    memmove(mem, (void *)pa, PGSIZE);
+  }
+  // 如果指向该页的数量等于1，则直接使用该页
+  else if (umem.mem_map[PA2MAP(pa)] == 1) {
+    mem = (char *)pa;
+  }
+  else
+    goto err;
+  uint64 perm = PTE_FLAGS(*pte);
+  perm &= ~PTE_COW; // Clear PTE_COW
+  perm |= PTE_W; // Set PTE_W
+  *pte = PA2PTE(mem) | perm;
+  umem.mem_map[PA2MAP(pa)]--;
+  release(&umem.lock);
+  return 0;
+
+err:
+  release(&umem.lock);
+  return -1;
 }
 
 // create an empty user page table.
@@ -319,12 +400,17 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
       // panic("uvmcopy: page not present");
       continue;
     pa = PTE2PA(*pte);
+    *pte &= ~PTE_W; // Clear PTE_W bit
+    *pte |= PTE_COW; // Set PTE_COW bit
     flags = PTE_FLAGS(*pte);
+    mem = (char *)pa; // Child mem is the same as parent pa
+    /*
     if((mem = kalloc()) == 0)
       goto err;
     memmove(mem, (char*)pa, PGSIZE);
+    */
     if(mappages(new, i, PGSIZE, (uint64)mem, flags) != 0){
-      kfree(mem);
+      // kfree(mem);
       goto err;
     }
   }
@@ -357,16 +443,28 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
   uint64 n, va0, pa0;
 
   while(len > 0){
-    va0 = PGROUNDDOWN(dstva);
-    pa0 = walkaddr(pagetable, va0);
-    if (pa0 == 0)
+    struct proc *p = myproc();
+    if ((dstva >= MAXVA)) // Higher then allocated
     {
-      struct proc *p = myproc();
-      if ((dstva >= p->sz)) // Higher then allocated
-      {
+      return -1;
+    }
+    va0 = PGROUNDDOWN(dstva);
+    pte_t* pte = walk(pagetable, va0, 0);
+    if (pte != 0 && (*pte & PTE_V) != 0 && (*pte & PTE_U) == 0) // Guard Page
+    {
+      return -1;
+    }
+    // cow
+    if (pte != 0 && (*pte & PTE_V) != 0 && (*pte & PTE_COW) != 0) {
+      if (uvmremap(pagetable, va0) != 0) {
         return -1;
       }
-      if (walk(pagetable, va0, 0) != 0 && (*walk(pagetable, va0, 0) & PTE_V) != 0 && (*walk(pagetable, va0, 0) & PTE_U) == 0) // Guard Page
+    }
+    pa0 = PTE2PA(*pte);
+    // lazy
+    if (pa0 == 0)
+    {
+      if ((dstva >= p->sz)) // Higher then allocated
       {
         return -1;
       }
@@ -381,7 +479,7 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
         kfree((void *)pa0);
         return -1;
       }
-    }
+    } 
     n = PGSIZE - (dstva - va0);
     if(n > len)
       n = len;

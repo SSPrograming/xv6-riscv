@@ -82,8 +82,9 @@ usertrap(void)
       }
       // page fault -> cow
       else if (pte != 0 && (*pte & PTE_V) != 0 && (*pte & PTE_COW) != 0) {
-        printf("%x\n", PTE_FLAGS(*pte));
-        p->killed = 1;
+        if (uvmremap(p->pagetable, PGROUNDDOWN(a)) != 0) {
+          p->killed = 1;
+        }
       } 
       // page fault -> lazy location
       else
