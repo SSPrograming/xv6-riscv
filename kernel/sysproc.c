@@ -107,6 +107,6 @@ sys_vmprint(void)
 int
 sys_pgaccess(void)
 {
-  
+
   return 0;
 }

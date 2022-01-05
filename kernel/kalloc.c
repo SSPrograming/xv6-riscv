@@ -99,6 +99,5 @@ kspare(void)
     r = r->next;
   }
   release(&kmem.lock);
-
   return spare_count * PGSIZE;
 }
