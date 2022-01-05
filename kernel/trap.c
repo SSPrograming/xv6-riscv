@@ -69,31 +69,39 @@ usertrap(void)
   }
   else if (r_scause() == 13 || r_scause() == 15)
   {
-    // page fault -> lazy location
     uint64 a = r_stval();
     if ((a >= p->sz)) // Higher then allocated
     {
       p->killed = 1;
     }
-    else if (walk(p->pagetable, a, 0) != 0 && (*walk(p->pagetable, a, 0) & PTE_V) != 0 && (*walk(p->pagetable, a, 0) & PTE_U) == 0) // Guard Page
-    {
-      p->killed = 1;
-    }
-    else
-    {
-      a = PGROUNDDOWN(a);
-      char *mem = kalloc();
-      if (mem == 0)
+    else {
+      pte_t* pte = walk(p->pagetable, a, 0);
+      if (pte != 0 && (*pte & PTE_V) != 0 && (*pte & PTE_U) == 0) // Guard Page
       {
-        p->killed = 1; // Out of memory
+        p->killed = 1;
       }
+      // page fault -> cow
+      else if (pte != 0 && (*pte & PTE_V) != 0 && (*pte & PTE_COW) != 0) {
+        printf("%x\n", PTE_FLAGS(*pte));
+        p->killed = 1;
+      } 
+      // page fault -> lazy location
       else
       {
-        memset(mem, 0, PGSIZE);
-        if (mappages(p->pagetable, a, PGSIZE, (uint64)mem, PTE_W | PTE_X | PTE_R | PTE_U) != 0)
+        a = PGROUNDDOWN(a);
+        char *mem = kalloc();
+        if (mem == 0)
         {
-          kfree(mem);
-          p->killed = 1;
+          p->killed = 1; // Out of memory
+        }
+        else
+        {
+          memset(mem, 0, PGSIZE);
+          if (mappages(p->pagetable, a, PGSIZE, (uint64)mem, PTE_W | PTE_X | PTE_R | PTE_U) != 0)
+          {
+            kfree(mem);
+            p->killed = 1;
+          }
         }
       }
     }
