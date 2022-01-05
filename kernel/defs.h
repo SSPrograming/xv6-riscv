@@ -101,6 +101,7 @@ void            sleep(void*, struct spinlock*);
 void            userinit(void);
 int             wait(uint64);
 void            wakeup(void*);
+void            yield(void);
 int             either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
 int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void            procdump(void);
@@ -156,6 +157,7 @@ int             uartgetc(void);
 // vm.c
 void            kvminit(void);
 void            kvminithart(void);
+pte_t*          walk(pagetable_t pagetable, uint64 va, int alloc);
 void            kvmmap(pagetable_t, uint64, uint64, uint64, int);
 int             mappages(pagetable_t, uint64, uint64, uint64, int);
 pagetable_t     uvmcreate(void);

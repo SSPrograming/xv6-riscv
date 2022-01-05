@@ -135,6 +135,7 @@ UPROGS=\
 	$U/_zombie\
 	$U/_syscalltest\
 	$U/_pgtbltest\
+	$U/_lazytests\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
