@@ -741,6 +741,7 @@ void FIFO_replace(uint64 va){
   if (*old & PTE_D) { // 如果该页被修改过
     writeback(*old, tailer->va);
   }
+  *old &= ~PTE_V;
   tailer->prev->next = 0;
   // p->tailer = tailer->prev;
   new_header->next = header;
@@ -766,6 +767,7 @@ void LRU_replace(uint64 va) {
   if (*old & PTE_D) { // 如果该页被修改过
     writeback(*old, tailer->va);
   }
+  *old &= ~PTE_V;
   tailer->prev->next = 0;
   // p->tailer = tailer->prev;
   new_header->next = header;
