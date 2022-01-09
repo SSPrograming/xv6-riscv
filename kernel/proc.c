@@ -697,6 +697,7 @@ void readfrom(pte_t pte, uint64 va) {
   return;
 }
 
+
 void 
 clock_replace(uint64 va) {
   struct proc *p = myproc();
@@ -724,6 +725,55 @@ clock_replace(uint64 va) {
   readfrom(*new, va);
   clock_pointer->va = va;
   clock_pointer->pte = new;
+}
+
+void FIFO_replace(uint64 va){
+  struct proc* p = myproc();
+  // struct Node* header = p->header;
+  // struct Node* tailer = p->tailer;
+  struct Node* new_header;
+  struct Node* header = 0;
+  struct Node* tailer = 0;
+  pte_t* old = tailer->pte;
+  pte_t* new = walk(p->pagetable, va, 1);
+  *new = *old;
+  *new &= ~PTE_D; // 新页未被修改
+  if (*old & PTE_D) { // 如果该页被修改过
+    writeback(*old, tailer->va);
+  }
+  tailer->prev->next = 0;
+  // p->tailer = tailer->prev;
+  new_header->next = header;
+  //p->header = new_header;
+  readfrom(*new, va);
+  new_header->va = va;
+  new_header->pte = new;
+  new_header->prev = 0;
+}
+
+void LRU_replace(uint64 va) {
+  //替换过程与FIFO没有区别
+  struct proc* p = myproc();
+  // struct Node* header = p->header;
+  // struct Node* tailer = p->tailer;
+  struct Node* new_header;
+  struct Node* header = 0;
+  struct Node* tailer = 0;
+  pte_t* old = tailer->pte;
+  pte_t* new = walk(p->pagetable, va, 1);
+  *new = *old;
+  *new &= ~PTE_D; // 新页未被修改
+  if (*old & PTE_D) { // 如果该页被修改过
+    writeback(*old, tailer->va);
+  }
+  tailer->prev->next = 0;
+  // p->tailer = tailer->prev;
+  new_header->next = header;
+  //p->header = new_header;
+  readfrom(*new, va);
+  new_header->va = va;
+  new_header->pte = new;
+  new_header->prev = 0;
 }
 
 
