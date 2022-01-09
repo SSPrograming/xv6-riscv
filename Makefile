@@ -137,6 +137,7 @@ UPROGS=\
 	$U/_pgtbltest\
 	$U/_lazytest\
 	$U/_cowtest\
+	$U/_matrixtest\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
