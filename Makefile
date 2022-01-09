@@ -137,7 +137,14 @@ UPROGS=\
 	$U/_pgtbltest\
 	$U/_lazytest\
 	$U/_cowtest\
-	$U/_matrixtest\
+	$U/_sbrk1\
+	$U/_sbrk10\
+	$U/_sbrk100\
+	$U/_sbrk1000\
+	$U/_sbrk1e4\
+	$U/_sbrk1e5\
+	$U/_sbrk1e6\
+	$U/_sbrk1e7\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)

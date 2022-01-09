@@ -12,21 +12,16 @@ int str2num(char* number) {
 }
 
 int main(int argc, char* argv[]){
-    sbrk(1024*1024);
-    vmprint();
     if (argc != 2) {
         printf("please enter specify the size of the matrix\n");
         exit(1);
     }
     int matrix_size = str2num(argv[1]);
-    printf("\n%d\n", matrix_size);
-    //sbrk(1024*1024*3);
-    /*
-    vmprint();
     int** matrix = (int **)malloc(matrix_size*sizeof(int *));
     for (int i=0;i<matrix_size;i++){
         matrix[i] = (int *)malloc(matrix_size*sizeof(int));
     }
+    vmprint();
     for(int i =0;i<matrix_size;i++){
         for (int j =0;j<matrix_size;j++) {
             matrix[i][j] = matrix_size;
@@ -38,24 +33,7 @@ int main(int argc, char* argv[]){
             break;
         }
     }
-    printf("\n");*/    
-
-    /*
-    int matrix_static[64][64];
-    vmprint();
-    for(int i =0;i<matrix_size;i++){
-        for (int j =0;j<matrix_size;j++) {
-            matrix_static[i][j] = matrix_size;
-        }
-    }
-    //for(int i =0;i<matrix_size;i++){
-    //    printf("%d\t", matrix_static[i][i]);
-    //    if(i>30) {
-    //        break;
-    //    }
-    //}
     printf("\n");
     vmprint();
-    */
     exit(0);
 }

@@ -5,6 +5,7 @@ from gradelib import *
 
 r = Runner(save("xv6.out"))
 
+"""
 @test(0, "running cowtest")
 def test_cowtest():
     r.run_qemu(shell_script([
@@ -24,7 +25,7 @@ def test_three():
 @test(20, "file", parent=test_cowtest)
 def test_file():
     r.match('^file: ok$')
-
+"""
 """
 @test(0, "usertests")
 def test_usertests():
@@ -46,5 +47,52 @@ def test_sbrkbugs():
     usertest_check("copyout", "copyinstr1", r.qemu.output)
 """
 
+@test(0, "running sbrk1")
+def test_cowtest():
+    r.run_qemu(shell_script([
+        'sbrk1'
+    ]))
+
+@test(0, "running sbrk10")
+def test_cowtest():
+    r.run_qemu(shell_script([
+        'sbrk10'
+    ]))
+
+@test(0, "running sbrk100")
+def test_cowtest():
+    r.run_qemu(shell_script([
+        'sbrk100'
+    ]))
+
+@test(0, "running sbrk1000")
+def test_cowtest():
+    r.run_qemu(shell_script([
+        'sbrk1000'
+    ]))
+
+@test(0, "running sbrk1e4")
+def test_cowtest():
+    r.run_qemu(shell_script([
+        'sbrk1e4'
+    ]))
+
+@test(0, "running sbrk1e5")
+def test_cowtest():
+    r.run_qemu(shell_script([
+        'sbrk1e5'
+    ]))
+
+@test(0, "running sbrk1e6")
+def test_cowtest():
+    r.run_qemu(shell_script([
+        'sbrk1e6'
+    ]))
+
+@test(0, "running sbrk1e7")
+def test_cowtest():
+    r.run_qemu(shell_script([
+        'sbrk1e7'
+    ]))
 
 run_tests()
