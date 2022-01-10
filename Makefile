@@ -137,6 +137,17 @@ UPROGS=\
 	$U/_pgtbltest\
 	$U/_lazytest\
 	$U/_cowtest\
+	$U/_sbrk1\
+	$U/_sbrk10\
+	$U/_sbrk100\
+	$U/_sbrk1000\
+	$U/_sbrk1e4\
+	$U/_sbrk1e5\
+	$U/_sbrk1e6\
+	$U/_sbrk1e7\
+	$U/_usyscalltest\
+	$U/_sbrk1e8\
+	$U/_manyforktest\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
@@ -175,3 +186,48 @@ qemu-gdb: $K/kernel .gdbinit fs.img
 	@echo "*** Now run 'gdb' in another window." 1>&2
 	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
 
+GDBPORT = $(shell expr `id -u` % 5000 + 25000)
+# QEMU's gdb stub command line changed in 0.11
+QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
+	then echo "-gdb tcp::$(GDBPORT)"; \
+	else echo "-s -p $(GDBPORT)"; fi)
+ifndef CPUS
+CPUS := 3
+endif
+ifeq ($(LAB),fs)
+CPUS := 1
+endif
+
+FWDPORT = $(shell expr `id -u` % 5000 + 25999)
+
+QEMUOPTS = -machine virt -bios none -kernel $K/kernel -m 128M -smp $(CPUS) -nographic
+QEMUOPTS += -drive file=fs.img,if=none,format=raw,id=x0
+QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+ifeq ($(LAB),net)
+# try to generate a unique port for the echo server
+SERVERPORT = $(shell expr `id -u` % 5000 + 25099)
+
+server:
+	python3 server.py $(SERVERPORT)
+
+ping:
+	python3 ping.py $(FWDPORT)
+endif
+
+##
+##  FOR testing lab grading script
+##
+
+ifneq ($(V),@)
+GRADEFLAGS += -v
+endif
+
+print-gdbport:
+	@echo $(GDBPORT)
+
+grade:
+	@echo $(MAKE) clean
+	@$(MAKE) clean || \
+          (echo "'make clean' failed.  HINT: Do you have another running instance of xv6?" && exit 1)
+	./grade-lab-$(LAB) $(GRADEFLAGS)

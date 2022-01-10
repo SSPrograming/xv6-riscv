@@ -2310,13 +2310,13 @@ sbrkfail(char *s)
     int n = 0;
     for (i = 0; i < 10*BIG; i += PGSIZE) {
       n += *(a+i);
+      //printf("%d", i);
     }
     // print n so the compiler doesn't optimize away
     // the for loop.
     printf("%s: allocate a lot of memory succeeded %d\n", s, n);
     exit(1);
   }
-  printf("\0");
   wait(&xstatus);
   if(xstatus != -1 && xstatus != 2)
     exit(1);
