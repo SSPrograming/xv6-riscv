@@ -678,3 +678,82 @@ procdump(void)
     printf("\n");
   }
 }
+
+// 虚拟内存的时钟置换算法
+struct Node {
+  struct Node* prev;
+  struct Node* next;
+  uint64 va;
+  pte_t* pte;
+};
+
+void writeback(pte_t pte, uint64 va) {
+  // 把pte指向的物理页写回va虚拟地址指向的磁盘页
+  return;
+}
+
+void readfrom(pte_t pte, uint64 va) {
+  // 把va虚拟地址指向的磁盘页读到pte指向的物理页
+  return;
+}
+
+void 
+clock_replace(uint64 va) {
+  struct proc *p = myproc();
+  // 在PCB中记录时钟算法的指针
+  // struct Node* clock_pointer = p->clock_pointer;
+  struct Node* clock_pointer = 0;
+  // 时钟盘面组织成双向循环链表，时钟指针指向最早进入的物理页面
+  
+  // 时钟指针指向的物理页表是否被访问过
+  while (*(clock_pointer->pte) & PTE_A) {
+    *(clock_pointer->pte) &= ~PTE_A;
+    clock_pointer = clock_pointer->next;
+  }
+
+  // 时钟指针指向最早进入且PTE_A = 0的物理页面
+  pte_t* old = clock_pointer->pte; // 旧的指向该物理页面的页表项
+  pte_t* new = walk(p->pagetable, va, 1); // 新的指向该物理页面的页表项
+  *new = *old;
+  *new |= PTE_A; // 初始赋访问位为1
+  *new &= ~PTE_D; // 新页未被修改
+  if (*old & PTE_D) { // 如果该页被修改过
+    writeback(*old, clock_pointer->va);
+  }
+  *old &= ~PTE_V; // 旧页置为无效
+  readfrom(*new, va);
+  clock_pointer->va = va;
+  clock_pointer->pte = new;
+}
+
+
+/*
+// 遍历页表
+void 
+walk_pagetable() {
+  // 一级页表
+  pagetable_t pagetable_1 = p->pagetable;
+  int i, j, k;
+  for (i = 0; i < 512; i++) {
+      // 二级页表
+      pte_t pte_1 = pagetable_1[i];
+      if (pte_1 & PTE_V) {
+        pagetable_t pagetable_2 = PTE2PA(pte_1);
+        for (j = 0; j < 512; j++) {
+          // 三级页表
+          pte_t pte_2 = pagetable_2[i];
+          if (pte_2 & PTE_V) {
+            pagetable_t pagetable_3 = PTE2PA(pte_2);
+            for(k = 0; j < 512; j++) {
+              // 页表项
+              pte_t pte_3 = pagetable_3[k];
+              if (pte_3 & PTE_V) {
+                
+              }
+            }
+          }
+        }
+      }
+  }
+}
+*/
