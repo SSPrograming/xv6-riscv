@@ -633,3 +633,65 @@ void vmprint(pagetable_t pagetable, int depth)
     }
   }
 }
+
+// Recursively print page table flag.
+void vmprint_flag(pagetable_t pagetable, int depth)
+{
+  // displays the argument to vmprint.
+  if (depth == 0)
+  {
+    printf("page table %p\n", (uint64)pagetable);
+  }
+  // there are 2^9 = 512 PTEs in a page table.
+  for (int i = 0; i < 512; i++)
+  {
+    pte_t pte = pagetable[i];
+    if (pte & PTE_V)
+    {
+      // valid PTE.
+      for (int j = 0; j <= depth; j++)
+      {
+        printf(" ..");
+      }
+      printf("%d: pte ", i);
+      if (pte & PTE_V) {
+        printf("V ");
+      }
+      if (pte & PTE_R) {
+        printf("R ");
+      }
+      if (pte & PTE_W)
+      {
+        printf("W ");
+      }
+      if (pte & PTE_X) {
+        printf("X ");
+      }
+      if (pte & PTE_U) {
+        printf("U ");
+      }
+      if (pte & PTE_G) {
+        printf("G ");
+      }
+      if (pte & PTE_A)
+      {
+        printf("A ");
+      }
+      if (pte & PTE_D)
+      {
+        printf("D ");
+      }
+      if (pte & PTE_COW)
+      {
+        printf("COW ");
+      }
+      printf("\n");
+      // this PTE points to a lower-level page table.
+      if ((pte & (PTE_R | PTE_W | PTE_X)) == 0)
+      {
+        uint64 child = PTE2PA(pte);
+        vmprint_flag((pagetable_t)child, depth + 1);
+      }
+    }
+  }
+}

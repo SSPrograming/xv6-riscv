@@ -111,3 +111,11 @@ sys_vmprint(void)
   vmprint(myproc()->pagetable, 0);
   return 0;
 }
+
+// Print page table flag
+uint64
+sys_vmprint_flag(void)
+{
+  vmprint_flag(myproc()->pagetable, 0);
+  return 0;
+}

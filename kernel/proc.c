@@ -731,7 +731,7 @@ void FIFO_replace(uint64 va){
   struct proc* p = myproc();
   // struct Node* header = p->header;
   // struct Node* tailer = p->tailer;
-  struct Node* new_header;
+  struct Node* new_header = 0;
   struct Node* header = 0;
   struct Node* tailer = 0;
   pte_t* old = tailer->pte;
@@ -757,7 +757,7 @@ void LRU_replace(uint64 va) {
   struct proc* p = myproc();
   // struct Node* header = p->header;
   // struct Node* tailer = p->tailer;
-  struct Node* new_header;
+  struct Node* new_header = 0;
   struct Node* header = 0;
   struct Node* tailer = 0;
   pte_t* old = tailer->pte;

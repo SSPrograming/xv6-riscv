@@ -25,6 +25,7 @@ int sleep(int);
 int uptime(void);
 uint64 kspare(void);
 int vmprint(void);
+int vmprint_flag(void);
 
 // ulib.c
 int stat(const char*, struct stat*);

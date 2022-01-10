@@ -7,5 +7,6 @@ int main() {
     printf("pid: %d\n", ugetpid());
     printf("sz: %lB\n", ugetsz());
     vmprint();
+    vmprint_flag();
     exit(0);
 }
