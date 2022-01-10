@@ -145,6 +145,9 @@ UPROGS=\
 	$U/_sbrk1e5\
 	$U/_sbrk1e6\
 	$U/_sbrk1e7\
+	$U/_usyscalltest\
+	$U/_sbrk1e8\
+	$U/_manyforktest\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)

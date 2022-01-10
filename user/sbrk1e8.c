@@ -5,8 +5,8 @@
 int main(){
     int n=20;
     while(n--) {
-        sbrk(10);
-        sbrk(-10);
+        sbrk(100000000);
+        sbrk(-100000000);
     }
     exit(0);
 }

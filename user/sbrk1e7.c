@@ -3,7 +3,10 @@
 #include "user/user.h"
 
 int main(){
-    sbrk(100000000);
-    //vmprint();
+    int n=20;
+    while(n--) {
+        sbrk(10000000);
+        sbrk(-10000000);
+    }
     exit(0);
 }

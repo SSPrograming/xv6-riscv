@@ -3,6 +3,10 @@
 #include "user/user.h"
 
 int main(){
-    sbrk(1000);
+    int n=20;
+    while(n--) {
+        sbrk(1000);
+        sbrk(-1000);
+    }
     exit(0);
 }

@@ -47,12 +47,14 @@ def test_sbrkbugs():
     usertest_check("copyout", "copyinstr1", r.qemu.output)
 """
 
+
 @test(0, "running sbrk1")
 def test_cowtest():
     r.run_qemu(shell_script([
         'sbrk1'
     ]))
 
+"""
 @test(0, "running sbrk10")
 def test_cowtest():
     r.run_qemu(shell_script([
@@ -95,4 +97,31 @@ def test_cowtest():
         'sbrk1e7'
     ]))
 
+@test(0, "running sbrk1e8")
+def test_sbrk1e8test():
+    r.run_qemu(shell_script([
+        'sbrk1e8'
+    ]))
+"""
+
+"""
+@test(0, "running cowtest")
+def test_cowtest():
+    r.run_qemu(shell_script([
+        'cowtest'
+    ]))
+
+
+@test(0, "running usyscalltest")
+def test_usyscalltest():
+    r.run_qemu(shell_script([
+        'usyscalltest'
+    ]))
+"""
+
+@test(0, "running forktest")
+def test_forktest():
+    r.run_qemu(shell_script([
+        'forktest'
+    ]))
 run_tests()
