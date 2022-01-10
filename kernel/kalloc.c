@@ -23,6 +23,8 @@ struct {
   struct run *freelist;
 } kmem;
 
+uint64 spare_count;
+
 void
 kinit()
 {
@@ -59,6 +61,7 @@ kfree(void *pa)
   acquire(&kmem.lock);
   r->next = kmem.freelist;
   kmem.freelist = r;
+  spare_count++;
   release(&kmem.lock);
 }
 
@@ -72,8 +75,10 @@ kalloc(void)
 
   acquire(&kmem.lock);
   r = kmem.freelist;
-  if(r)
+  if(r) {
     kmem.freelist = r->next;
+    spare_count--;
+  }
   release(&kmem.lock);
 
   if(r)
@@ -85,6 +90,8 @@ kalloc(void)
 uint64
 kspare(void)
 {
+  return spare_count * PGSIZE;
+  /*
   struct run *r;
 
   acquire(&kmem.lock);
@@ -100,4 +107,5 @@ kspare(void)
   }
   release(&kmem.lock);
   return spare_count * PGSIZE;
+  */
 }
